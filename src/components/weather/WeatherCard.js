@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import moment from 'moment';
+import Modal from 'react-modal'; // Import react-modal
 import { FaWind, FaTint, FaThermometerHalf, FaLocationArrow ,FaMapPin   } from 'react-icons/fa';
+import { IoCloseCircleSharp } from "react-icons/io5";
 import { GiPositionMarker } from 'react-icons/gi'
 import LoadingUi from '../common/LoadingUi';
 import { FiSunrise, FiSunset } from "react-icons/fi";
@@ -30,6 +32,8 @@ const WeatherCard = () => {
 
   const [backgroundImage, setBackgroundImage] = useState('');
   const [selectedDayIndex, setSelectedDayIndex] = useState(null);
+  const [modalIsOpen, setModalIsOpen] = useState(false);
+  const [selectedDayData, setSelectedDayData] = useState(null);
 
   //const [currentHour, setCurrentHour] = useState(new Date().getHours());
 
@@ -183,11 +187,13 @@ const WeatherCard = () => {
   
   
   const handleDayClick = (index) => {
-    if (selectedDayIndex === index) {
-      setSelectedDayIndex(null); // Close the details if the same day is clicked again
-    } else {
-      setSelectedDayIndex(index); // Open details for the clicked day
-    }
+    setSelectedDayData(weather.days[index]);
+    setModalIsOpen(true);
+  };
+
+  const closeModal = () => {
+    setModalIsOpen(false);
+    setSelectedDayData(null);
   };
 
 
@@ -197,9 +203,9 @@ const WeatherCard = () => {
   
 
   return (
-    <div className="w-full max-w-3xl mx-auto">
+    <div className="w-full max-w-5xl mx-auto relative">
       {/* <h1 className="text-2xl mb-4 text-slate-200 font-semibold">Weather Updates</h1> */}
-      <div className="flex items-center mb-4 gap-2">
+      <div className="flex items-center my-4 gap-2">
       <button
           className="w-12 h-12 flex items-center justify-center bg-neutral-100 border-2 border-white shadow-lg hover:bg-indigo-950/60 text-white rounded-md group focus:outline-none"
           onClick={fetchGeolocationWeather}
@@ -209,7 +215,7 @@ const WeatherCard = () => {
         <input
           type="text"
           placeholder="Enter location..."
-          className="px-4 h-12 flex-grow bg-neutral-100 border-2 border-white shadow-lg rounded-md focus:outline-none text-indigo-300"
+          className="px-4 h-12 flex-grow bg-neutral-100 border-2 border-white shadow-lg rounded-md focus:outline-none text-slate-500"
           value={searchInput}
           onChange={(e) => setSearchInput(e.target.value)}
         />
@@ -290,63 +296,74 @@ const WeatherCard = () => {
                 </div>
               </div>
           </div>
-          <div className="flex flex-wrap gap-4 mt-4">
+          <div className="flex flex-wrap gap-4 mt-4 mb-10">
               <div className='flex flex-wrap justify-between items-start gap-4'>
-                <h2 className='text-lg md:text-3xl font-bold tracking-wider p-5 basis-full text-center'>15-Days <span className='text-indigo-400 border-t border-t-rose-400 border-b border-indigo-400 py-2'>24x7</span> Forcast</h2>
+                <h2 className='text-lg md:text-3xl font-bold tracking-wider p-5 basis-full text-center text-neutral-600'>15-Days <span className='text-indigo-400 border-t border-t-rose-400 border-b border-indigo-400 py-2'>24x7</span> Forcast</h2>
+                <div className='flex flex-wrap justify-between items-start gap-5'>
                 {weather &&
                 weather.days.slice(0, 15).map((day, index) => (
-                  <div key={index} className="bg-indigo-50 w-full p-0 shadow-lg rounded-lg overflow-hidden">
-                    <p className="text-indigo-300 flex justify-between font-bold p-4 border-indigo-800 cursor-pointer mb-0" onClick={() => handleDayClick(index)}>
+                  <div key={index} className="border-4 flex-auto w-full md:w-1/3 lg:w-1/4 border-white p-0 shadow-lg rounded-md  overflow-hidden">
+                    <p className="text-neutral-500 bg-gradient-to-r from-blue-100 to-sky-50 flex justify-between font-bold p-4 border-indigo-800 cursor-pointer mb-0" onClick={() => handleDayClick(index)}>
                       <span>{moment(day.datetime).format('MMM D, Y')}</span>
                       <span><FaThermometerHalf className="mr-[0px] -mt-[3px] text-rose-500 inline-block text-[14px]" /> {Math.round(day.tempmax)}<sup className='text-[10px]'>°C</sup> - <FaThermometerHalf className="mr-[0px] -mt-[3px] text-sky-500 inline-block text-[14px]" /> {Math.round(day.tempmin)}<sup className='text-[10px]'>°C</sup></span>
                     </p>
-                    <div className={`overflow-x-auto w-full transition-all duration-100  ${selectedDayIndex === index ? 'max-h-full opacity-100' : 'max-h-0 opacity-0'}`}>
-                      <table className="text-slate-400 text-center w-full table-fixed rounded-md">
-                        <thead className='text-[10px] md:text-[15px]'>
-                          <tr>
-                            <th className='text-center bg-blue-900/5 py-2 px-3 font-medium w-[80px]'>Time</th>
-                            <th className='text-center bg-blue-900/5 py-2 px-3 font-medium' colspan="4">Condition</th>
-                          </tr>
-                        </thead>
-                        <tbody className='bg-slate-100/20 text-[10px] md:text-[15px] font-extrabold divide-solid divide-white divi'>
-                          {day && day.hours.slice(0, 25).map((hour, hourIndex) => (
-                            <tr key={hourIndex} >
-                              {/* className={`${hourIndex === currentHour ? ' bg-indigo-100 text-slate-900' : ''}`} onClick={() => handleRowClick(hourIndex)} */}
-                              <td className='py-2 px-3  w-[50px] text-[11px] md:text-[13px]'>
-                              {hourIndex}:00
-                              </td>
-                              <td colspan="4" className='py-0 px-1'>
-                                <span className='flex flex-wrap gap-1 items-start'>
-                                <span className='rounded-sm bg-indigo-50 text-left px-0 py-[10px] flex items-center w-[46%] md:w-[24.5%] h-9 font-medium text-[12px] align-middle'>
-                                  <FaThermometerHalf className="mr-[2px] text-rose-500 inline-block text-[11px] md:text-[13px] align-middle" /> <span className='align-middle inline-block'>{Math.round(hour.temp)}<sup className='text-[7px]'>°C</sup></span>
-                                </span>
-                                <span className='rounded-sm bg-indigo-50 text-left px-0 py-[10px] flex items-center w-[46%] md:w-[24.5%] h-9 font-medium text-[13px]'>
-                                  <FaTint className="mr-[3px]  text-sky-300 inline-block text-[11px] md:text-[13px] align-middle" /> <span className='align-middle inline-block'>{hour.humidity} %</span>
-                                </span>
-                                <span className='rounded-sm bg-indigo-50 text-left px-0 py-[10px] flex items-center w-[46%] md:w-[24.5%] h-9 font-medium text-[13px] align-middle'>
-                                  <FaWind className="mr-[3px]  text-sky-300 inline-block text-[11px] md:text-[13px] align-middle" /> <span className='align-middle inline-block'>{hour.windspeed} <sup className='font-light text-[7px] align-middle'>km/h</sup></span>
-                                </span>
-                                <span className='rounded-sm bg-indigo-50 text-left px-0 py-[10px] flex w-auto md:w-[24.5%] h-9 items-center justify-start'>
-                                  <span className='inline-block align-middle'>
-                                    {hour.conditions === 'Partially cloudy' && <img src={`${process.env.PUBLIC_URL}/cloudy-day-2.svg`} className='w-9 h-8 mx-0 object-cover' alt="cloudcover" />}
-                                    {hour.conditions === 'Overcast' && <img src={`${process.env.PUBLIC_URL}/cloudy.svg`} className='w-9 h-8 mx-0 object-cover' alt="cloudcover" />}
-                                    {hour.conditions === 'Clear' && <img src={`${process.env.PUBLIC_URL}/day.svg`} className='w-9 h-8 mx-0 object-cover' alt="cloudcover" />}
-                                    {hour.conditions === 'Rain, Partially cloudy' && <img src={`${process.env.PUBLIC_URL}/rainy-3.svg`} className='w-9 h-8 mx-0 object-cover' alt="cloudcover" />}
-                                    {hour.conditions === 'Rain, Overcast' && <img src={`${process.env.PUBLIC_URL}/rainy-6.svg`} className='w-9 h-8 mx-0 object-cover' alt="cloudcover" />}
-                                  </span>
-                                  <span className='text-[11px] md:text-[13px] font-normal inline-block'>{hour.conditions}</span>
-                                </span>
-                                </span>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
                   </div>
                 ))}
+                </div>
               </div>
           </div>
+          {selectedDayData && (
+            <Modal
+              isOpen={modalIsOpen}
+              onRequestClose={closeModal}
+              contentLabel="Weather Details"
+              className="modal"
+              overlayClassName="modal-overlay"
+            >
+              <div className='flex justify-between items-center mb-4'>
+                <h2 className="text-lg font-bold">{moment(selectedDayData.datetime).format('MMM D, Y')}</h2> <button onClick={closeModal} className=""><IoCloseCircleSharp className=' text-rose-600 text-2xl' /></button>
+              </div>
+              <table className="text-slate-400 text-center w-full table-fixed rounded-md absolute h-full bottom-0 top-16 left-0 right-0 overflow-y-auto">
+                <thead className='text-[10px] md:text-[15px]'>
+                  <tr>
+                    <th className='text-center bg-indigo-50 py-2 px-3 font-medium w-[80px]'>Time</th>
+                    <th className='text-center bg-indigo-50 py-2 px-3 font-medium' colSpan="4">Condition</th>
+                  </tr>
+                </thead>
+                <tbody className='bg-slate-100/20 text-[10px] md:text-[15px] font-extrabold divide-solid divide-white divi absolute w-full left-0 right-0 flex  flex-col bottom-16 top-10 overflow-y-auto'>
+                  {selectedDayData.hours.slice(0, 25).map((hour, hourIndex) => (
+                    <tr key={hourIndex} className='w-full flex'>
+                      <td className='py-2 px-3 w-[80px] text-[11px] md:text-[13px]'>{hourIndex}:00</td>
+                      <td colSpan="4" className='py-0 px-1 flex-1'>
+                        <span className='flex flex-wrap gap-1 items-start'>
+                          <span className='rounded-sm bg-neutral-50 text-left px-0 py-[10px] flex items-center w-[46%] md:w-[24.5%] h-9 font-medium text-[12px] align-middle'>
+                            <FaThermometerHalf className="mr-[2px] text-rose-500 inline-block text-[11px] md:text-[13px] align-middle" /> <span className='align-middle inline-block'>{Math.round(hour.temp)}<sup className='text-[7px]'>°C</sup></span>
+                          </span>
+                          <span className='rounded-sm bg-neutral-50 text-left px-0 py-[10px] flex items-center w-[46%] md:w-[24.5%] h-9 font-medium text-[13px]'>
+                            <FaTint className="mr-[3px] text-sky-300 inline-block text-[11px] md:text-[13px] align-middle" /> <span className='align-middle inline-block'>{hour.humidity} %</span>
+                          </span>
+                          <span className='rounded-sm bg-neutral-50 text-left px-0 py-[10px] flex items-center w-[46%] md:w-[24.5%] h-9 font-medium text-[13px] align-middle'>
+                            <FaWind className="mr-[3px] text-sky-300 inline-block text-[11px] md:text-[13px] align-middle" /> <span className='align-middle inline-block'>{hour.windspeed} <sup className='font-light text-[7px] align-middle'>km/h</sup></span>
+                          </span>
+                          <span className='rounded-sm bg-neutral-50 text-left px-0 py-[10px] flex w-auto md:w-[24.5%] h-9 items-center justify-start'>
+                            <span className='inline-block align-middle'>
+                              {hour.conditions === 'Partially cloudy' && <img src={`${process.env.PUBLIC_URL}/cloudy-day-2.svg`} className='w-9 h-8 mx-0 object-cover' alt="cloudcover" />}
+                              {hour.conditions === 'Overcast' && <img src={`${process.env.PUBLIC_URL}/cloudy.svg`} className='w-9 h-8 mx-0 object-cover' alt="cloudcover" />}
+                              {hour.conditions === 'Clear' && <img src={`${process.env.PUBLIC_URL}/day.svg`} className='w-9 h-8 mx-0 object-cover' alt="cloudcover" />}
+                              {hour.conditions === 'Rain, Partially cloudy' && <img src={`${process.env.PUBLIC_URL}/rainy-3.svg`} className='w-9 h-8 mx-0 object-cover' alt="cloudcover" />}
+                              {hour.conditions === 'Rain, Overcast' && <img src={`${process.env.PUBLIC_URL}/rainy-6.svg`} className='w-9 h-8 mx-0 object-cover' alt="cloudcover" />}
+                            </span>
+                            <span className='text-[11px] md:text-[13px] font-normal inline-block'>{hour.conditions}</span>
+                          </span>
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+             
+            </Modal>
+          )}
         </>
       )}
     </div>
